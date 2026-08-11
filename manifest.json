@@ -4,7 +4,7 @@
   "description": "Compteur quotidien d'items EDN avec suivi hebdomadaire.",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0B1220",
   "theme_color": "#0B1220",
