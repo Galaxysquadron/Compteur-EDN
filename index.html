@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compteur EDN</title>
+<meta name="description" content="Compteur quotidien d'items EDN, objectif 8/jour, suivi de la semaine.">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#0B1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EDN">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#121B2E;
+    --panel-edge:#1c2740;
+    --grid:#1E2A44;
+    --text:#E8EDF5;
+    --text-muted:#7C8AA5;
+    --red:#E5484D;
+    --amber:#F5A524;
+    --green:#2FBF71;
+    --sans:'Manrope', system-ui, -apple-system, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+    --ring-color: hsl(0, 72%, 50%);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+  }
+
+  body{
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: center;
+    background-attachment: fixed;
+    display:flex;
+    justify-content:center;
+    padding: 28px 16px 48px;
+  }
+
+  .page{ width:100%; max-width:420px; }
+
+  .card{
+    background:linear-gradient(180deg, var(--panel), #0f1830);
+    border:1px solid var(--panel-edge);
+    border-radius:28px;
+    padding:28px 24px 22px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+
+  header{ text-align:center; margin-bottom: 6px; }
+
+  .eyebrow{
+    margin:0 0 6px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--text-muted);
+    text-transform:uppercase;
+  }
+
+  h1{
+    margin:0 0 6px;
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+
+  .sub{
+    margin:0;
+    font-size:13px;
+    color:var(--text-muted);
+  }
+
+  .ring-wrap{
+    display:flex;
+    justify-content:center;
+    margin: 26px 0 14px;
+  }
+
+  .counter-btn{
+    position:relative;
+    width:216px;
+    height:216px;
+    border-radius:50%;
+    border:none;
+    background:transparent;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .counter-btn:active .ring-svg{ transform: scale(0.97); }
+
+  .ring-svg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:rotate(-90deg);
+    transition: transform .15s ease;
+  }
+
+  .ring-bg{
+    fill:none;
+    stroke: var(--panel-edge);
+    stroke-width:12;
+  }
+
+  .ring-progress{
+    fill:none;
+    stroke: var(--ring-color);
+    stroke-width:12;
+    stroke-linecap:round;
+    stroke-dasharray: 540.35;
+    stroke-dashoffset: 540.35;
+    transition: stroke-dashoffset .35s ease, stroke .35s ease;
+  }
+
+  .count-core{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+
+  .count-value{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:64px;
+    line-height:1;
+    color: var(--ring-color);
+    transition: color .35s ease;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .count-label{
+    font-size:12px;
+    color:var(--text-muted);
+    letter-spacing:.03em;
+  }
+
+  .actions{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin: 4px 0 22px;
+  }
+
+  .btn{
+    font-family:var(--sans);
+    font-weight:700;
+    border-radius:12px;
+    cursor:pointer;
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+
+  .btn-ghost{
+    flex:1;
+    max-width:220px;
+    padding:12px 16px;
+    font-size:14px;
+    color:var(--text);
+    background:var(--panel-edge);
+    border:1px solid var(--panel-edge);
+  }
+  .btn-ghost:hover{ background:#233150; }
+
+  .btn-tiny{
+    padding:12px 14px;
+    font-size:14px;
+    color:var(--text-muted);
+    background:transparent;
+    border:1px solid var(--panel-edge);
+  }
+  .btn-tiny:hover{ color:var(--text); border-color:#334166; }
+
+  .btn:focus-visible, .counter-btn:focus-visible{
+    outline: 2px solid var(--green);
+    outline-offset: 3px;
+  }
+
+  .ecg{
+    display:block;
+    width:100%;
+    height:22px;
+    margin: 4px 0 18px;
+    color: var(--panel-edge);
+  }
+  .ecg path{ stroke: currentColor; }
+
+  .week h2{
+    margin:0 0 12px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+  }
+
+  .chips{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap:6px;
+    margin-bottom:16px;
+  }
+
+  .chip{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    padding:10px 0 8px;
+    border-radius:12px;
+    background: var(--panel-edge);
+    border:1px solid transparent;
+  }
+
+  .chip.chip-empty{ background: transparent; border:1px dashed var(--panel-edge); }
+
+  .chip-today{ border-color: var(--ring-color, var(--green)); }
+
+  .chip-day{
+    font-size:11px;
+    color:var(--text-muted);
+    letter-spacing:.04em;
+  }
+
+  .chip-val{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:15px;
+    color: var(--chip-color, var(--text-muted));
+  }
+
+  .week-total-row{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    margin-bottom:8px;
+  }
+
+  .week-total-row #weekTotal{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:20px;
+  }
+
+  .week-goal{ font-size:13px; color:var(--text-muted); }
+
+  .week-pct{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--text-muted);
+  }
+
+  .progress-track{
+    height:10px;
+    border-radius:999px;
+    background: var(--panel-edge);
+    overflow:hidden;
+  }
+
+  .progress-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background: linear-gradient(90deg, var(--red), var(--amber), var(--green));
+    background-size: 400% 100%;
+    background-position: 0% 0;
+    transition: width .5s ease;
+  }
+
+  footer{
+    margin-top:22px;
+    text-align:center;
+  }
+
+  footer p{
+    margin:0;
+    font-size:11px;
+    color:var(--text-muted);
+    line-height:1.5;
+  }
+
+  @media (max-width:360px){
+    .counter-btn{ width:188px; height:188px; }
+    .count-value{ font-size:54px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="card">
+    <header>
+      <p class="eyebrow">EDN · Suivi quotidien</p>
+      <h1>Compteur d'items</h1>
+      <p class="sub">Objectif 8 items / jour · 56 / semaine</p>
+    </header>
+
+    <div class="ring-wrap">
+      <button id="counterBtn" class="counter-btn" aria-label="Ajouter un item validé aujourd'hui">
+        <svg class="ring-svg" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="ring-bg" cx="100" cy="100" r="86"></circle>
+          <circle id="ringProgress" class="ring-progress" cx="100" cy="100" r="86"></circle>
+        </svg>
+        <span class="count-core">
+          <span class="count-value" id="countValue" aria-live="polite">0</span>
+          <span class="count-label" id="countLabel">aujourd'hui</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="actions">
+      <button id="resetBtn" class="btn btn-ghost" type="button">Réinitialiser</button>
+      <button id="minusBtn" class="btn btn-tiny" type="button" aria-label="Corriger, retirer un item">&minus;1</button>
+    </div>
+
+    <svg class="ecg" viewBox="0 0 300 22" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 11 H110 L120 2 L130 20 L140 11 H190 L198 4 L206 18 L214 11 H300"
+            fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <section class="week" aria-label="Suivi de la semaine">
+      <h2>Cette semaine</h2>
+      <div class="chips" id="chips"></div>
+      <div class="week-total">
+        <div class="week-total-row">
+          <span id="weekTotal">0</span>
+          <span class="week-goal">/ 56 items</span>
+          <span class="week-pct" id="weekPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Toutes les données restent stockées en local sur cet appareil, rien n'est envoyé sur un serveur.</p>
+      <p>Le compteur du jour bascule à 2h du matin : une session lancée avant 2h compte encore pour la veille.</p>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "edn-counter-v1";
+  const DAILY_GOAL = 8;
+  const WEEKLY_GOAL = 56;
+  const RING_CIRCUMFERENCE = 2 * Math.PI * 86; // 540.35...
+
+  const counterBtn   = document.getElementById("counterBtn");
+  const resetBtn     = document.getElementById("resetBtn");
+  const minusBtn     = document.getElementById("minusBtn");
+  const ringProgress = document.getElementById("ringProgress");
+  const countValueEl = document.getElementById("countValue");
+  const countLabelEl = document.getElementById("countLabel");
+  const chipsEl      = document.getElementById("chips");
+  const weekTotalEl  = document.getElementById("weekTotal");
+  const weekPctEl    = document.getElementById("weekPct");
+  const progressFill = document.getElementById("progressFill");
+  const root         = document.documentElement;
+
+  function pad(n){ return String(n).padStart(2, "0"); }
+
+  function toKey(d){
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function logicalNow(){
+    // La journée "logique" démarre à 2h du matin : une session lancée
+    // entre 00h00 et 01h59 compte encore pour la veille (utile pour
+    // les sessions de révision tardives).
+    const d = new Date();
+    if (d.getHours() < 2) d.setDate(d.getDate() - 1);
+    return d;
+  }
+
+  function startOfWeek(d){
+    const date = new Date(d);
+    const day = (date.getDay() + 6) % 7; // lundi = 0
+    date.setDate(date.getDate() - day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function hueColor(t){
+    const hue = Math.max(0, Math.min(1, t)) * 140;
+    return `hsl(${hue.toFixed(0)}, 72%, 50%)`;
+  }
+
+  function loadData(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (raw && typeof raw === "object" && raw.counts) return raw;
+    }catch(e){ /* ignore corrupted data */ }
+    return { counts: {} };
+  }
+
+  function saveData(data){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  let data = loadData();
+
+  function todayKey(){ return toKey(logicalNow()); }
+
+  function setCount(key, value){
+    data.counts[key] = Math.max(0, value);
+    saveData(data);
+  }
+
+  function render(){
+    const key = todayKey();
+    const count = data.counts[key] || 0;
+    const t = Math.min(count, DAILY_GOAL) / DAILY_GOAL;
+    const color = hueColor(t);
+
+    root.style.setProperty("--ring-color", color);
+    countValueEl.textContent = count;
+
+    const offset = RING_CIRCUMFERENCE * (1 - t);
+    ringProgress.style.strokeDashoffset = offset.toFixed(2);
+
+    if (count === 0) countLabelEl.textContent = "aujourd'hui";
+    else if (count < DAILY_GOAL) countLabelEl.textContent = "aujourd'hui";
+    else if (count === DAILY_GOAL) countLabelEl.textContent = "objectif atteint";
+    else countLabelEl.textContent = `+${count - DAILY_GOAL} au-delà de l'objectif`;
+
+    renderWeek(key);
+  }
+
+  function renderWeek(todayK){
+    const monday = startOfWeek(logicalNow());
+    const dayLetters = ["L", "M", "M", "J", "V", "S", "D"];
+    let html = "";
+    let weekTotal = 0;
+
+    for (let i = 0; i < 7; i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const key = toKey(d);
+      const isFuture = key > todayK;
+      const isToday = key === todayK;
+      const raw = data.counts[key];
+      const hasValue = !isFuture;
+      const value = hasValue ? (raw || 0) : null;
+
+      if (hasValue) weekTotal += value;
+
+      const color = hasValue ? hueColor(Math.min(value, DAILY_GOAL) / DAILY_GOAL) : null;
+      const displayVal = hasValue ? value : "–";
+      const classes = ["chip"];
+      if (isToday) classes.push("chip-today");
+      if (!hasValue) classes.push("chip-empty");
+
+      html += `<div class="${classes.join(" ")}" style="${color ? `--chip-color:${color}` : ""}">
+        <span class="chip-day">${dayLetters[i]}</span>
+        <span class="chip-val">${displayVal}</span>
+      </div>`;
+    }
+
+    chipsEl.innerHTML = html;
+    weekTotalEl.textContent = weekTotal;
+
+    const pct = Math.min(weekTotal / WEEKLY_GOAL, 1) * 100;
+    weekPctEl.textContent = `${Math.round(pct)}%`;
+    progressFill.style.width = `${pct}%`;
+  }
+
+  counterBtn.addEventListener("click", function(){
+    const key = todayKey();
+    setCount(key, (data.counts[key] || 0) + 1);
+    render();
+  });
+
+  minusBtn.addEventListener("click", function(){
+    const key = todayKey();
+    setCount(key, (data.counts[key] || 0) - 1);
+    render();
+  });
+
+  resetBtn.addEventListener("click", function(){
+    const key = todayKey();
+    const current = data.counts[key] || 0;
+    if (current === 0) return;
+    const ok = window.confirm("Réinitialiser le compteur d'aujourd'hui à 0 ?");
+    if (!ok) return;
+    setCount(key, 0);
+    render();
+  });
+
+  render();
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    // Pas de service worker fourni : l'app fonctionne déjà hors-ligne
+    // une fois chargée, grâce au stockage 100% local (localStorage).
+  }
+})();
+</script>
+
+</body>
+</html>
